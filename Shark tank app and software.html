@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> Attendance Tracker</title>
+  <style>
+    body {
+      font-family: 'd', cursive;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(#89e29c #52aae6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      width: 90%;
+      max-width: 800px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    h1 {
+      color: #2980b9;
+      margin-bottom: 20px;
+      font-size: 2.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+    }
+    th {
+      background: #2980b9;
+      color: #ffffff;
+    }
+    td select, td button {
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    td button {
+      background-color: #e74c3c;
+      color: white;
+      cursor: pointer;
+    }
+    td button:hover {
+      background-color: #c0392b;
+    }
+    button {
+      padding: 12px 20px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-top: 15px;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    #passwordPopup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ffffff;
+      padding: 20px;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      text-align: center;
+      width: 300px;
+    }
+    #passwordPopup input {
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 100%;
+    }
+    #passwordPopup button {
+      padding: 10px 15px;
+      background-color: #f39c12;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      width: 100%;
+    }
+    #passwordPopup button:hover {
+      background-color: #e67e22;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1> Attendance Tracker</h1>
+    <div>
+      <label for="attendanceDate">Attendance Date: </label>
+      <input type="date" id="attendanceDate" onchange="resetAttendance()">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="attendanceTable"></tbody>
+    </table>
+    <div>
+      <button onclick="saveAttendance()">Save Attendance</button>
+      <button onclick="showPasswordPopup()">Add Names</button>
+      <button onclick="changePassword()">Change Password</button>
+      <button onclick="viewAttendanceReport()">View Attendance Report</button>
+    </div>
+  </div>
+
+  <div id="passwordPopup">
+    <h3>Enter Password</h3>
+    <input type="password" id="popupPassword" placeholder="Enter password">
+    <button onclick="verifyPassword()">Submit</button>
+    <button onclick="closePopup()">Cancel</button>
+  </div>
+
+  <script>
+    let students = ["John Doe", "Jane Smith", "Alice Brown", "Bob Johnson"];
+    let attendanceStatus = {};
+    let password = "1234";
+
+    function populateTable() {
+      const table = document.getElementById('attendanceTable');
+      table.innerHTML = '';
+      students.forEach((name, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${name}</td>
+          <td>
+            <select onchange="updateAttendance('${name}', this.value)">
+              <option value="Present">Present</option>
+              <option value="Absent">Absent</option>
+            </select>
+          </td>
+          <td><button onclick="removeStudent(${index})">Remove</button></td>
+        `;
+        table.appendChild(row);
+      });
+    }
+
+    function resetAttendance() {
+      const date = document.getElementById('attendanceDate').value;
+      if (!date) {
+        alert('Please select a date.');
+        return;
+      }
+      attendanceStatus = {};
+      students.forEach(student => {
+        attendanceStatus[student] = "Present";
+      });
+      populateTable();
+    }
+
+    function saveAttendance() {
+      const date = document.getElementById('attendanceDate').value;
+      if (!date) {
+        alert('Please select a date.');
+        return;
+      }
+      let csvContent = "Date,Name,Status\n";
+      students.forEach(name => {
+        csvContent += `${date},${name},${attendanceStatus[name] || 'Not Recorded'}\n`;
+      });
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Attendance_${date}.csv`;
+      link.click();
+    }
+
+    function updateAttendance(name, status) {
+      attendanceStatus[name] = status;
+    }
+
+    function showPasswordPopup() {
+      document.getElementById('passwordPopup').style.display = 'block';
+    }
+
+    function closePopup() {
+      document.getElementById('passwordPopup').style.display = 'none';
+      document.getElementById('popupPassword').value = '';
+    }
+
+    function verifyPassword() {
+      const inputPassword = document.getElementById('popupPassword').value;
+      if (inputPassword === password) {
+        const newName = prompt("Enter the new student name:");
+        if (newName && !students.includes(newName)) {
+          students.push(newName);
+          populateTable();
+          alert("Student added successfully!");
+        } else if (students.includes(newName)) {
+          alert("This name already exists!");
+        }
+      } else {
+        alert("Incorrect password!");
+      }
+      closePopup();
+    }
+
+    function changePassword() {
+      const currentPassword = prompt("Enter current password:");
+      if (currentPassword === password) {
+        const newPassword = prompt("Enter new password:");
+        if (newPassword) {
+          password = newPassword;
+          alert("Password changed successfully!");
+        }
+      } else {
+        alert("Incorrect current password!");
+      }
+    }
+
+    function removeStudent(index) {
+      if (confirm(`Are you sure you want to remove ${students[index]}?`)) {
+        students.splice(index, 1);
+        populateTable();
+      }
+    }
+
+    function viewAttendanceReport() {
+      const date = document.getElementById('attendanceDate').value;
+      if (!date) {
+        alert("Please select a date.");
+        return;
+      }
+
+      let presentStudents = [];
+      let absentStudents = [];
+
+      students.forEach(student => {
+        const status = attendanceStatus[student] || "Not Recorded";
+        if (status === "Present") {
+          presentStudents.push(student);
+        } else {
+          absentStudents.push(student);
+        }
+      });
+
+      const report = `
+Attendance Report for ${date}
+------------------------------------
+Present: ${presentStudents.join(", ") || "None"}
+Absent: ${absentStudents.join(", ") || "None"}
+------------------------------------
+      `;
+      alert(report);
+    }
+
+    populateTable();
+  </script>
+</body>
+</html>
